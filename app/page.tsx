@@ -321,7 +321,7 @@ export default function ValentineAskLikeDesign() {
               <div className="relative h-[130px] w-[190px] md:h-[110px] md:w-[110px] lg:w-[380px] lg:h-[280px] overflow-hidden">
                 <div className="pointer-events-none absolute inset-0 blur-xl" />
                 <img
-                  src="/Output-onlinegiftools.gif"
+                  src="/love.gif"
                   alt="Love gif"
                   className="relative h-full w-full object-cover"
                 />
