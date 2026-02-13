@@ -4,7 +4,6 @@ import React, { useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Heart, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-/** ✅ Same hearts background from your current page */
 function FloatingHearts({ count = 18 }: { count?: number }) {
   const hearts = useMemo(() => {
     let seed = 9876543;
@@ -67,8 +66,7 @@ function FloatingHearts({ count = 18 }: { count?: number }) {
             opacity: 0.8;
           }
           100% {
-            transform: translateY(-115vh)
-              translateX(calc(var(--drift) * -0.6))
+            transform: translateY(-115vh) translateX(calc(var(--drift) * -0.6))
               scale(1.08);
             opacity: 0;
           }
@@ -89,65 +87,203 @@ function FloatingHearts({ count = 18 }: { count?: number }) {
   );
 }
 
-/** ✅ Glass modal (center) */
+function PartySparks({
+  show,
+  durationMs = 5000,
+  count = 180,
+  onDone,
+}: {
+  show: boolean;
+  durationMs?: number;
+  count?: number;
+  onDone: () => void;
+}) {
+  const sparks = useMemo(() => {
+    let seed = 13579246;
+    const rand = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+
+    return Array.from({ length: count }, (_, i) => {
+      const x = rand() * 100;
+      const y = rand() * 100;
+      const delay = rand() * 0.9;
+      const angle = rand() * Math.PI * 2;
+      const distance = 140 + rand() * 420;
+      const dx = Math.cos(angle) * distance;
+      const dy = Math.sin(angle) * distance;
+      const size = 10 + rand() * 18;
+      const rotate = rand() * 360;
+      const emoji = rand() > 0.55 ? "✨" : rand() > 0.2 ? "🎉" : "💫";
+      return { id: i, x, y, delay, dx, dy, size, rotate, emoji };
+    });
+  }, [count]);
+
+  if (!show) return null;
+
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
+      {sparks.map((s) => (
+        <span
+          key={s.id}
+          className="spark"
+          style={{
+            left: `${s.x}vw`,
+            top: `${s.y}vh`,
+            animationDelay: `${s.delay}s`,
+            animationDuration: `${durationMs / 1000}s`,
+            fontSize: `${s.size}px`,
+            ["--dx" as any]: `${s.dx}px`,
+            ["--dy" as any]: `${s.dy}px`,
+            ["--rot" as any]: `${s.rotate}deg`,
+          }}
+        >
+          {s.emoji}
+        </span>
+      ))}
+
+      <span
+        className="absolute left-0 top-0 h-1 w-1 opacity-0"
+        style={{ animation: `done ${durationMs}ms linear forwards` }}
+        onAnimationEnd={onDone}
+      />
+
+      <style jsx>{`
+        .spark {
+          position: absolute;
+          transform: translate(-50%, -50%);
+          opacity: 0;
+          filter: drop-shadow(0 12px 26px rgba(0, 0, 0, 0.18));
+          animation-name: sparkBurst;
+          animation-timing-function: cubic-bezier(0.17, 0.67, 0.22, 1);
+          animation-fill-mode: forwards;
+          will-change: transform, opacity;
+        }
+
+        @keyframes sparkBurst {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) translate(0, 0) rotate(0deg) scale(0.85);
+          }
+          10% {
+            opacity: 1;
+          }
+          55% {
+            opacity: 1;
+            transform: translate(-50%, -50%) translate(var(--dx), var(--dy))
+              rotate(var(--rot)) scale(1.15);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%)
+              translate(calc(var(--dx) * 1.2), calc(var(--dy) * 1.2))
+              rotate(calc(var(--rot) * 1.4)) scale(0.9);
+          }
+        }
+
+        @keyframes done {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 function GlassModal({
   open,
+  type,
   title,
   message,
   onClose,
+  disableActions = false,
   actions,
 }: {
   open: boolean;
+  type: "yes" | "no";
   title: string;
   message: React.ReactNode;
   onClose: () => void;
+  disableActions?: boolean;
   actions?: React.ReactNode;
 }) {
   if (!open) return null;
 
+  const isYes = type === "yes";
+
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      className="fixed inset-0 z-[60] px-4 py-4 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       onMouseDown={(e) => {
-        // close only when clicking the backdrop
+        if (disableActions) return;
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/35 backdrop-blur-sm" />
 
-      {/* Modal */}
       <div className="relative w-full max-w-[520px] rounded-[18px] border border-white/20 bg-white/15 backdrop-blur-xl shadow-[0_28px_90px_rgba(0,0,0,0.45)] text-white overflow-hidden">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_15%,rgba(255,255,255,0.18),transparent_55%)]" />
 
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-full border border-white/25 bg-white/10 p-2 text-white/90 hover:bg-white/15 active:scale-[0.98]"
+          disabled={disableActions}
+          className={`absolute right-3 top-3 rounded-full border border-white/25 bg-white/10 p-2 text-white/90 hover:bg-white/15 active:scale-[0.98]
+            ${disableActions ? "opacity-50 cursor-not-allowed pointer-events-none" : ""}`}
           aria-label="Close"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative px-6 py-6 md:px-7">
-          <h3 className="text-[18px] md:text-[20px] font-semibold">{title}</h3>
-          <div className="mt-3 text-white/90 text-[13px] md:text-[14px] leading-relaxed">
-            {message}
+      <div className="relative flex flex-col items-center px-4 py-4 h-[95vh] lg:max-h-[800px] overflow-y-auto">
+
+          {/* ✅ TOP GIF (ONLY FOR YES) */}
+          {isYes && (
+            <div className="mb-4 overflow-hidden rounded-[16px] mt-2 border border-white/20">
+              <div className="relative h-[180px] w-[240px] md:h-[180px]">
+                <img src="/gif-top.gif" alt="Top gif" className="h-full w-full object-cover" />
+              </div>
+            </div>
+          )}
+
+          {/* ✅ Content */}
+          <div className="relative px-6 py-6 md:px-7 w-full">
+            <h3 className="text-[18px] md:text-[20px] font-semibold">{title}</h3>
+
+            <div className="mt-3 text-white/90 text-[13px] lg:text-[26px] md:text-[14px] leading-relaxed">
+              {message}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
+              {actions ?? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={disableActions}
+                  className={`rounded-full border border-white/25 bg-white/10 px-4 py-2 lg:text-[24px] text-sm font-semibold text-white hover:bg-white/15 active:scale-[0.98]
+                    ${disableActions ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  Okay
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-end gap-3">
-            {actions ?? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/15 active:scale-[0.98]"
-              >
-                Okay
-              </button>
-            )}
-          </div>
+          {/* ✅ BOTTOM GIF (ONLY FOR YES) */}
+          {isYes && (
+            <div className="mt-2 overflow-hidden rounded-[16px] border border-white/20 mb-2">
+              <div className="relative h-[190px] w-[240px] md:h-[180px]">
+                <img src="/gif-bottom.gif" alt="Bottom gif" className="h-full w-full object-cover" />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -161,28 +297,71 @@ export default function ValentineAskPage() {
 
   const [yesMode, setYesMode] = useState(false);
 
-  // ✅ modal state
   const [modal, setModal] = useState<{ type: ModalType; open: boolean }>({
     type: null,
     open: false,
   });
 
-  // ✅ disable No while sound plays
   const [isNoDisabled, setIsNoDisabled] = useState(false);
+  const [noClicks, setNoClicks] = useState(0);
 
-  // ✅ reliable audio (no <audio> tag needed)
+  const [flyKey, setFlyKey] = useState(0);
+  const [isFlying, setIsFlying] = useState(false);
+  const [isFlyRunning, setIsFlyRunning] = useState(false);
+
+
+  const [isPartyRunning, setIsPartyRunning] = useState(false);
+
+
   const noAudio = useRef<HTMLAudioElement | null>(null);
+  const flyAudio = useRef<HTMLAudioElement | null>(null);
+  const yesAudio = useRef<HTMLAudioElement | null>(null);
 
-  const openModal = (type: Exclude<ModalType, null>) =>
-    setModal({ type, open: true });
+  const openModal = (type: Exclude<ModalType, null>) => setModal({ type, open: true });
 
-  const closeModal = () => setModal({ type: null, open: false });
+  const closeModal = () => {
+    if (isFlyRunning || isPartyRunning) return;
+    setModal({ type: null, open: false });
+  };
+
+  const startFly = async () => {
+    setIsFlying(true);
+    setIsFlyRunning(true);
+    setFlyKey((k) => k + 1);
+
+    if (!flyAudio.current) {
+      flyAudio.current = new Audio("/sounds/sad-hamster-meme-theme_R3IHfaua.mp3");
+    }
+
+    flyAudio.current.pause();
+    flyAudio.current.currentTime = 0;
+    flyAudio.current.play().catch(() => {});
+  };
+
+  const startParty = () => {
+    setIsPartyRunning(true);
+
+    if (!yesAudio.current) {
+      yesAudio.current = new Audio("/sounds/party.mp3");
+    }
+
+    yesAudio.current.pause();
+    yesAudio.current.currentTime = 0;
+    yesAudio.current.play().catch(() => {});
+  };
 
   const handleNoClick = async () => {
+    const next = noClicks + 1;
+    setNoClicks(next);
+
     openModal("no");
+    setIsNoDisabled(true);
 
     try {
-      setIsNoDisabled(true);
+      if (next >= 2) {
+        await startFly();
+        return;
+      }
 
       if (!noAudio.current) {
         noAudio.current = new Audio("/sounds/no.mp3");
@@ -204,6 +383,7 @@ export default function ValentineAskPage() {
   const handleYesClick = () => {
     setYesMode(true);
     openModal("yes");
+    startParty();
   };
 
   const modalTitle =
@@ -214,45 +394,96 @@ export default function ValentineAskPage() {
       <>
         Okay wow. You said <b>YES</b>. I’m smiling like an idiot now.
         <br />
-        Consider this official: you’re my favorite person, in every timezone. 💗
+  I love you baby. Can’t wait to see you.
+The distance doesn’t matter anymore you’re already mine. ❤️
       </>
     ) : modal.type === "no" ? (
       <>
-        You pressed <b>NO</b>… and now you must listen to the consequences. 😌
-        <br />
-        (Button will re-enable when the sound ends.)
+        {noClicks === 1 && (
+          <>
+            You pressed <b>NO</b>… You have <b>2 more chances</b> left 😌
+          </>
+        )}
+
+        {noClicks === 2 && (
+          <>
+            You pressed <b>NO</b> again… Only <b>1 chance</b> left now 😏
+          </>
+        )}
+
+        {noClicks >= 3 && (
+          <>
+            You pressed <b>NO</b> again… So ok.... 😌
+          </>
+        )}
       </>
     ) : null;
 
   return (
     <main className="relative min-h-screen overflow-hidden">
-      {/* same background gradient */}
       <div className="absolute inset-0 bg-[linear-gradient(135deg,#ff5db1_17%,#ef017c_100%)]" />
+      <PartySparks
+        show={isPartyRunning}
+        durationMs={5000}
+        count={190}
+        onDone={() => setIsPartyRunning(false)}
+      />
+      {isFlying && (
+        <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
+          <img
+            key={flyKey}
+            src="/bg-mu.gif"
+            alt="Flying gif"
+            className="no-fly"
+            onAnimationEnd={() => {
+              setIsFlying(false);
+              setIsFlyRunning(false);
+              setIsNoDisabled(false);
+            }}
+          />
 
-      {/* center */}
-      <div className="relative z-10 flex min-h-screen items-center justify-center px-4">
+          <style jsx>{`
+         .no-fly {
+  position: absolute;
+  left: -25vw;
+  top: 35%;
+  width: clamp(120px, 15vw, 260px);
+  aspect-ratio: 16 / 10;
+  border-radius: 999px;
+  object-fit: cover;
+  filter: drop-shadow(0 18px 35px rgba(0, 0, 0, 0.35));
+  animation: flyAcross 8s ease-in-out forwards;
+}
+
+
+            @keyframes flyAcross {
+              0% {
+                transform: translateX(0) translateY(0) rotate(-6deg) scale(0.95);
+              }
+              15% {
+                transform: translateX(18vw) translateY(-10px) rotate(3deg) scale(1);
+              }
+              35% {
+                transform: translateX(42vw) translateY(8px) rotate(-3deg) scale(1.02);
+              }
+              60% {
+                transform: translateX(70vw) translateY(-12px) rotate(4deg) scale(1.03);
+              }
+              100% {
+                transform: translateX(calc(100vw + 220px)) translateY(0) rotate(0deg) scale(1);
+              }
+            }
+          `}</style>
+        </div>
+      )}
+
+      <div className="relative z-10 flex min-h-screen items-center justify-center py-4 lg:py-[40px] px-4">
         <div className="relative w-full max-w-[360px] md:max-w-[520px] lg:max-w-[900px]">
-          {/* Card */}
-          <div
-            className="
-              relative
-              rounded-[18px]
-              overflow-hidden
-              border border-white/25
-              bg-white/10
-              backdrop-blur-xl
-              shadow-[0_28px_80px_rgba(0,0,0,0.30)]
-              text-center
-              px-7 py-10 md:px-10 md:py-14
-              text-white
-            "
-          >
+          <div className="relative rounded-[18px] overflow-hidden border border-white/25 bg-white/10 backdrop-blur-xl shadow-[0_28px_80px_rgba(0,0,0,0.30)] text-center px-7 py-10 md:px-10 md:py-14 text-white">
             <FloatingHearts count={22} />
             <div className="pointer-events-none absolute inset-0 rounded-[18px] bg-[radial-gradient(circle_at_30%_15%,rgba(255,255,255,0.22),transparent_48%)]" />
 
-            {/* content */}
             <div className="relative motion-safe:animate-[popIn_.55s_ease-out_both]">
-              {/* GIF */}
               <div className="relative mx-auto mb-5 h-[110px] w-[110px] overflow-hidden rounded-full">
                 <div className="absolute inset-0 rounded-full bg-white/30 blur-xl" />
                 <img
@@ -262,123 +493,106 @@ export default function ValentineAskPage() {
                 />
               </div>
 
-              <h1 className="text-[26px] md:text-[34px] font-semibold tracking-tight drop-shadow-[0_10px_24px_rgba(0,0,0,0.25)]">
+              <h1 className="text-[26px] lg:text-[46px] md:text-[34px] font-semibold tracking-tight drop-shadow-[0_10px_24px_rgba(0,0,0,0.25)]">
                 Okay… one question. <span className="align-middle">💌</span>
               </h1>
 
-              <p className="mt-4 text-white/90 leading-relaxed text-[14px] md:text-[16px] max-w-[520px] mx-auto">
-                Today is Valentine’s Day, and I’ve decided I don’t want to stay quiet anymore. The
-                truth is, I’m not perfect. I don’t know poetry, and I don’t have movie-style dialogues
-                ready. But somehow, when you’re in front of me, everything feels simple and real.
+              <p className="mt-4 text-white/90 leading-relaxed text-[14px] lg:text-[24px] md:text-[16px] min-w-[520px] mx-auto">
+                I’m not the kind of person who knows how to turn feelings into perfect words. I
+                don’t have big speeches ready. But what I feel for you doesn’t need decoration. It’s
+                simple. It’s real.
                 <br />
                 <br />
-                I love your smile — the kind that happens without trying. I love the calm I feel just
-                by being around you, like the world slows down for a moment when you’re close. Being
-                with you feels easy, comforting, and safe in a way I never had to explain.
+                Being with you feels right in a way that’s hard to explain. Not dramatic. Not
+                overwhelming. Just steady. Comfortable. Like I don’t have to pretend or perform. I
+                can just exist and that’s enough.
                 <br />
                 <br />
-                You once thought I was getting annoyed with you — never. Not even for a second. How
-                could I be annoyed with someone I care about so deeply? And honestly, if I’m not there
-                for you during your hard days, then what’s the meaning of being there only for the happy ones?
+                You once thought I was getting annoyed with you. I wasn’t. I never was. If anything,
+                I care more than I probably show. And to me, caring means being there when things
+                aren’t perfect too. Not just when everything is easy.
                 <br />
                 <br />
-                You’re far away from me right now, and I miss you more than I usually say. I miss the
-                small things, the quiet moments, the feeling of having you close. Distance hasn’t changed
-                what I feel — it’s only made me realize how important you truly are to me.
+                You’re far away right now, and I miss you. Not loudly. Just in the quiet moments
+                when something reminds me of you, or when I wish you were standing next to me.
+                Distance hasn’t changed anything. It’s only made me more certain about how I feel.
                 <br />
                 <br />
-                I may not always say things perfectly, but my feelings have always been real, steady,
-                and honest. And today, I don’t just want to feel them quietly anymore.
+                I may not always say things in the most romantic way. But I’ve always been honest
+                with you.
                 <br />
                 <br />
-                I want to ask you something.
+                And today, I just don’t want to keep this quiet anymore.
                 <br />
-                Just something simple… but extremely important.
+                <br />
+                So I’m going to ask you something.
+                <br />
+                <br />
+                Something simple…
+                <br />
+                but something I mean.
               </p>
 
-              <p className="mt-6 text-[18px] md:text-[20px] font-semibold text-white">
+              <p className="mt-6 text-[22px] md:text-[20px] lg:text-[45px] font-semibold text-white">
                 Will you be my Valentine? <span className="align-middle">❤️</span>
               </p>
 
-              {/* Buttons */}
               <div className="relative mt-8 mx-auto w-full max-w-[520px]">
                 <div className="flex items-center justify-center gap-4">
                   <button
                     type="button"
-                    disabled={isNoDisabled}
+                    disabled={isNoDisabled || isPartyRunning}
                     onClick={handleNoClick}
                     className={`
-                      rounded-full
-                      bg-white/15
-                      border border-white/25
-                      backdrop-blur-md
-                      px-6 py-2
-                      text-sm font-semibold
-                      text-white
-                      shadow-[0_12px_30px_rgba(0,0,0,0.18)]
-                      transition
-                      hover:bg-white/20
-                      active:scale-[0.98]
-                      ${isNoDisabled ? "opacity-50 cursor-not-allowed" : ""}
+                      rounded-full bg-white/15 border border-white/25 backdrop-blur-md
+                      px-6 py-2 text-sm font-semibold text-white
+                      shadow-[0_12px_30px_rgba(0,0,0,0.18)] lg:text-[20px]
+                      transition hover:bg-white/20 active:scale-[0.98]
+                      ${isNoDisabled || isPartyRunning ? "opacity-50 cursor-not-allowed" : ""}
                     `}
                   >
-                    {isNoDisabled ? "No… (listening) 💔" : "No 💔"}
+                    {isNoDisabled ? "No… (wait) 💔" : "No 💔"}
                   </button>
 
                   <button
                     type="button"
+                    disabled={isPartyRunning}
                     onClick={handleYesClick}
-                    className="
-                      inline-flex items-center gap-2
-                      rounded-full
+                    className={`
+                      inline-flex items-center gap-2 rounded-full
                       bg-[linear-gradient(180deg,#ff2b75,#ff145f)]
-                      px-6 py-2
-                      text-sm font-semibold
-                      text-white
-                      shadow-[0_16px_40px_rgba(255,20,95,0.35)]
-                      transition
-                      hover:-translate-y-0.5
-                      active:translate-y-0
-                      active:scale-[0.98]
-                    "
+                      px-6 py-2 text-sm font-semibold text-white
+                      shadow-[0_16px_40px_rgba(255,20,95,0.35)] lg:text-[20px]
+                      transition hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+                      ${isPartyRunning ? "opacity-70 cursor-not-allowed" : ""}
+                    `}
                   >
                     Yes ❤️ <Heart className="h-4 w-4" />
                   </button>
                 </div>
 
-                <p className="mt-4 text-white/70 text-[12px]">
-                  (Now both buttons come with a popup 😌)
+                <p className="mt-4 text-white/70 text-[12px] lg:text-[20px]">
+                  (Do not Press <b>No</b> 😌)
                 </p>
               </div>
 
-              {/* Yes state */}
               {yesMode && (
-                <div className="mt-8 rounded-[16px] border border-white/20 bg-white/10 backdrop-blur-xl px-5 py-4 text-left">
-                  <p className="text-white font-semibold text-[14px] md:text-[15px]">
+                <div className="mt-8 rounded-[16px] border flex flex-col items-center border-white/20 bg-white/10 backdrop-blur-xl px-5 py-4 text-left">
+                  <p className="text-white font-semibold text-[14px] lg:text-[20px] md:text-[15px]">
                     Okay wow. You said yes. I’m smiling like an idiot now. 🥹
                   </p>
-                  <p className="mt-2 text-white/85 text-[13px] md:text-[14px] leading-relaxed">
+                  <p className="mt-2 text-white/85 text-[13px] md:text-[14px] lg:text-[20px] leading-relaxed">
                     Consider this official: you’re my favorite person, in every timezone.
                     <br />
-                    Now come here (virtually) so I can annoy you properly. 😌💗
+                  Note: This isn’t your Valentine’s gift 😌💗
+I’m giving you that one in person.
                   </p>
 
                   <div className="mt-4 flex items-center justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => router.back()}
-                      className="
-                        inline-flex items-center gap-2
-                        rounded-full
-                        border border-white/25
-                        bg-white/10
-                        px-4 py-2
-                        text-sm font-semibold
-                        text-white
-                        transition
-                        hover:bg-white/15
-                        active:scale-[0.98]
-                      "
+                      className="inline-flex items-center gap-2 rounded-full lg:text-[20px] border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15 active:scale-[0.98]"
                     >
                       <ChevronLeft className="h-4 w-4" />
                       Back
@@ -387,18 +601,7 @@ export default function ValentineAskPage() {
                     <button
                       type="button"
                       onClick={() => router.push("/")}
-                      className="
-                        inline-flex items-center gap-2
-                        rounded-full
-                        bg-white/15
-                        border border-white/25
-                        px-4 py-2
-                        text-sm font-semibold
-                        text-white
-                        transition
-                        hover:bg-white/20
-                        active:scale-[0.98]
-                      "
+                      className="inline-flex items-center gap-2  lg:text-[20px] rounded-full bg-white/15 border border-white/25 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 active:scale-[0.98]"
                     >
                       Home
                       <ChevronRight className="h-4 w-4" />
@@ -409,18 +612,19 @@ export default function ValentineAskPage() {
             </div>
           </div>
 
-          {/* bottom glow */}
           <div className="pointer-events-none absolute -inset-x-6 -bottom-10 h-24 rounded-full bg-white/10 blur-3xl" />
         </div>
       </div>
-
-      {/* ✅ Center modal for both Yes/No */}
-      <GlassModal
-        open={modal.open}
-        title={modalTitle}
-        message={modalMessage ?? ""}
-        onClose={closeModal}
-      />
+      {modal.open && modal.type && (
+        <GlassModal
+          open={modal.open}
+          type={modal.type === "yes" ? "yes" : "no"}
+          title={modalTitle}
+          message={modalMessage ?? ""}
+          onClose={closeModal}
+          disableActions={isFlyRunning || isPartyRunning}
+        />
+      )}
     </main>
   );
 }
