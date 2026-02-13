@@ -247,7 +247,7 @@ function GlassModal({
           {/* ✅ TOP GIF (ONLY FOR YES) */}
           {isYes && (
             <div className="mb-4 overflow-hidden rounded-[16px] mt-2 border border-white/20">
-              <div className="relative h-[180px] w-[240px] md:h-[180px]">
+              <div className="relative h-[180px] w-[240px] md:h-[180px] lg:w-[300px] lg:h-[240px]">
                 <img src="/gif-top.gif" alt="Top gif" className="h-full w-full object-cover" />
               </div>
             </div>
@@ -279,7 +279,7 @@ function GlassModal({
           {/* ✅ BOTTOM GIF (ONLY FOR YES) */}
           {isYes && (
             <div className="mt-2 overflow-hidden rounded-[16px] border border-white/20 mb-2">
-              <div className="relative h-[190px] w-[240px] md:h-[180px]">
+              <div className="relative h-[190px] w-[240px] md:h-[180px] lg:w-[300px] lg:h-[240px]">
                 <img src="/gif-bottom.gif" alt="Bottom gif" className="h-full w-full object-cover" />
               </div>
             </div>
@@ -497,7 +497,7 @@ The distance doesn’t matter anymore you’re already mine. ❤️
                 Okay… one question. <span className="align-middle">💌</span>
               </h1>
 
-              <p className="mt-4 text-white/90 leading-relaxed text-[14px] lg:text-[24px] md:text-[16px] min-w-[520px] mx-auto">
+              <p className="mt-4 text-white/90 leading-relaxed text-[14px] lg:text-[24px] md:text-[16px]  mx-auto">
                 I’m not the kind of person who knows how to turn feelings into perfect words. I
                 don’t have big speeches ready. But what I feel for you doesn’t need decoration. It’s
                 simple. It’s real.
