@@ -244,7 +244,6 @@ function GlassModal({
 
       <div className="relative flex flex-col items-center px-4 py-4 h-[95vh] lg:max-h-[800px] overflow-y-auto">
 
-          {/* ✅ TOP GIF (ONLY FOR YES) */}
           {isYes && (
             <div className="mb-4 overflow-hidden rounded-[16px] mt-2 border border-white/20">
               <div className="relative h-[180px] w-[240px] md:h-[180px] lg:w-[300px] lg:h-[240px]">
@@ -253,7 +252,6 @@ function GlassModal({
             </div>
           )}
 
-          {/* ✅ Content */}
           <div className="relative px-6 py-6 md:px-7 w-full">
             <h3 className="text-[18px] md:text-[20px] font-semibold">{title}</h3>
 
@@ -276,7 +274,6 @@ function GlassModal({
             </div>
           </div>
 
-          {/* ✅ BOTTOM GIF (ONLY FOR YES) */}
           {isYes && (
             <div className="mt-2 overflow-hidden rounded-[16px] border border-white/20 mb-2">
               <div className="relative h-[190px] w-[240px] md:h-[180px] lg:w-[300px] lg:h-[240px]">
